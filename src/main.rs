@@ -1,9 +1,10 @@
-use std::fs::File;
 use std::error::Error;
+use std::io;
+use std::fs;
 use csv::Reader;
 use clap::{Arg, App};
 
-fn main() {
+fn main() -> io::Result<()> {
     let given_options = App::new("music_directory_indexer_rust")
         .version("1.0")
         .about("Indexes a directory with an Album-Artist folder structure.")
@@ -29,7 +30,7 @@ fn main() {
             .long("sort-artist")
             .help("Sort all output by artist"))
         .arg(Arg::with_name("sort_album")
-            .short("r")
+            .short("l")
             .long("sort-album")
             .help("Sort all output by album"))
         .get_matches();
@@ -42,15 +43,36 @@ fn main() {
     }
 
     println!("Hello, world!");
+
+    Ok(())
 }
 
-fn read_given_data(path: &str) /*-> Vec<csv::StringRecord>*/ {
-    let mut readData = Vec::new();
+fn read_given_data(path: &str) -> Result<Vec<csv::StringRecord>, Box<dyn Error>> {
+    let mut read_data = Vec::new();
 
-    let mut rdr = csv::Reader::from_path(path)?;
-
+    let mut rdr = Reader::from_path(path)?;
     for result in rdr.records() {
         let record = result?;
-        readData.push(record);
+        println!("{:?}", record);
+        read_data.push(record);
     }
+    Ok(read_data)
+}
+
+fn index_directory(path: &str) -> Result<Vec<String>, Box<dyn Error>> {
+    let mut found_data = Vec::new();
+
+    for artist in fs::read_dir(path)? {
+        let artist = artist?;
+        if artist.file_type()?.is_dir() {
+            for album in fs::read_dir(artist.file_name()) {
+                let album = album?;
+                if album.file_type()?.is_dir() {
+                    found_data.push(album.file_name());
+                }
+            }
+        }
+    }
+
+    Ok(found_data)
 }
