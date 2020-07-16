@@ -25,7 +25,8 @@ fn main() -> io::Result<()> {
             .takes_value(true))
         .arg(Arg::with_name("directory")
             .help("The directory to index the folders of")
-            .required(false))
+            .required(false)
+            .default_value("."))
         .arg(Arg::with_name("sort_artist")
             .short("r")
             .long("sort-artist")
@@ -65,7 +66,7 @@ fn main() -> io::Result<()> {
         // Sort found_data
     }
 
-    write_found_data(given_options.value_of("output").unwrap(), &found_data).unwrap();
+    write_found_data(given_options.value_of("outfile").unwrap(), &found_data).unwrap();
 
     // If the user provided an input file
     if input_file_given {
@@ -129,8 +130,6 @@ fn main() -> io::Result<()> {
         }
     }
 
-    println!("Hello, world!");
-
     // We're done
     Ok(())
 }
@@ -143,7 +142,6 @@ fn read_given_data(path: &str) -> Result<Vec<csv::StringRecord>, Box<dyn Error>>
     // Loop through all the records in the file
     for result in rdr.records() {
         let record = result?;
-        println!("{:?}", record);
         // Add the record to the vector
         read_data.push(record);
     }
@@ -157,7 +155,7 @@ fn index_directory(path: &str) -> Result<Vec<StringRecord>, Box<dyn Error>> {
     for artist in fs::read_dir(path)? {
         let artist = artist?;
         if artist.file_type()?.is_dir() {
-            for album in fs::read_dir(artist.file_name())? {
+            for album in fs::read_dir(artist.path())? {
                 let album = album?;
                 if album.file_type()?.is_dir() {
                     found_data.push(StringRecord::from(vec![artist.file_name().into_string().unwrap(),
