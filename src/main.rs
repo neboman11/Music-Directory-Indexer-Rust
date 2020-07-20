@@ -47,23 +47,27 @@ fn main() -> io::Result<()> {
         given_data = read_given_data(given_options.value_of("infile").unwrap()).unwrap();
     }
 
-    let found_data = index_directory(given_options.value_of("directory").unwrap()).unwrap();
+    let mut found_data = index_directory(given_options.value_of("directory").unwrap()).unwrap();
 
     // Sort the data first
     if given_options.is_present("sort_artist") {
         if input_file_given {
             // Sort given_data
+            given_data.sort_by(|a, b| a.get(0).unwrap().partial_cmp(b.get(0).unwrap()).unwrap());
         }
 
         // Sort found_data
+        found_data.sort_by(|a, b| a.get(0).unwrap().partial_cmp(b.get(0).unwrap()).unwrap());
     }
 
     else if given_options.is_present("sort_album") {
         if input_file_given {
             // Sort given_data
+            given_data.sort_by(|a, b| a.get(1).unwrap().partial_cmp(b.get(1).unwrap()).unwrap());
         }
 
         // Sort found_data
+        found_data.sort_by(|a, b| a.get(1).unwrap().partial_cmp(b.get(1).unwrap()).unwrap());
     }
 
     write_found_data(given_options.value_of("outfile").unwrap(), &found_data).unwrap();
@@ -101,6 +105,8 @@ fn main() -> io::Result<()> {
             wtr.write_record(record)?;
         }
 
+        wtr.flush()?;
+
         println!();
 
         let mut missing_data = Vec::new();
@@ -128,6 +134,8 @@ fn main() -> io::Result<()> {
         for record in missing_data {
             wtr.write_record(&record)?;
         }
+
+        wtr.flush()?;
     }
 
     // We're done
